@@ -6,11 +6,11 @@ import flux
 import util
 import response
  
-basedir='/data/legs/rpete/flight/xcal_hrcsi'
+basedir='/data/legs/rpete/flight/hz43'
 datadir=basedir+'/data'
 
 def model():
-    return np.loadtxt('/data/legs/rpete/flight/hz43_model/non_LTE/15.model', unpack=True)
+    return np.loadtxt('/data/legs/rpete/flight/hz43/model/non_LTE/15.model', unpack=True)
 
 def obsids():
     global basedir
