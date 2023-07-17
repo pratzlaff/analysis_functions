@@ -14,7 +14,7 @@ def model():
 
 def obsids():
     global basedir
-    return np.loadtxt(basedir+'/obsids/hz43', usecols=(0,), unpack=True).astype(int)
+    return np.loadtxt(basedir+'/obsids', usecols=(0,), unpack=True).astype(int)
 
 def predicted_rates(obsids):
     rates = []
