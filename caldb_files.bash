@@ -58,6 +58,9 @@ match_caldb_file() {
     for o in ${old_hv[@]}; do [ $obsid -eq $o ] && dateobs=$old_date; done
     for o in ${new_hv[@]}; do [ $obsid -eq $o ] && dateobs=$new_date; done
 
+    # first HRC-I HV change, test observation
+    [ $obsid -eq 62639 ] && dateobs=2021-02-17
+
     # second HRC-S HV change, test observation
     [ $obsid -eq 62635 ] && dateobs=2021-05-15
 
