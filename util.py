@@ -9,7 +9,7 @@ import errno, os, sys
 import flux
 import response
 
-basedir='/data/legs/rpete/flight/xcal_hrcsi'
+basedir='/data/legs/rpete/flight/hz43'
 datadir=basedir+'/data'
 
 tg_parts = { 'HEG' : 1, 'MEG' : 2, 'LEG' : 3 }
