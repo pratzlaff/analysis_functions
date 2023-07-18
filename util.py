@@ -44,13 +44,13 @@ def bins2energy(lo, hi):
 
 def evt2_file(obsid, tg_reprocess='tg_reprocess'):
     global datadir
-    globstr = '{}/*/{}/{}/*_evt2.fits'.format(datadir, obsid, tg_reprocess)
-    #sys.stderr.write(globstr+"\n")
+    globstr = '{}/{}/{}/*_evt2.fits'.format(datadir, obsid, tg_reprocess)
+     #sys.stderr.write(globstr+"\n")
     return glob.glob(globstr)[0]
 
 def pha2_file(obsid, tg_reprocess='tg_reprocess'):
     global datadir
-    globstr = '{}/*/{}/{}/*_pha2.fits'.format(datadir, obsid, tg_reprocess)
+    globstr = '{}/{}/{}/*_pha2.fits'.format(datadir, obsid, tg_reprocess)
     return glob.glob(globstr)[0]
 
 def read_pha2(filename):
