@@ -893,17 +893,14 @@ sub _process_hrc_directory {
 
       my @order_list = map { -$_, $_ } @orders;
       $new->addtype('pha2', 2);
-      _run_command('punlearn', 'tgextract');
-      _run_command('tgextract',
+      _run_command('punlearn', 'tgextract2');
+      _run_command('tgextract2',
 		   'infile='.$evt2,
 		   'outfile='.$new->pha2,
-		   'outfile_type=pha_typeII',
 		   'tg_srcid_list=all',
 		   'tg_part_list=header_value',
-		   ( $detnam == HRC_S ? ('inregion_file=CALDB') : () ),
+		   ( $detnam == HRC_S ? ('region_file=CALDB') : () ),
 		   'tg_order_list='.join(',',@order_list),
-		   'ancrfile=none',
-		   'respfile=none',
 		   'clobber=yes',
 		   (exists $opts{min_bin_leg} ? ( 'min_bin_leg='.$opts{min_bin_leg} ) : () ),
 		   (exists $opts{max_bin_leg} ? ( 'max_bin_leg='.$opts{max_bin_leg} ) : () ),
