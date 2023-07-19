@@ -893,20 +893,41 @@ sub _process_hrc_directory {
 
       my @order_list = map { -$_, $_ } @orders;
       $new->addtype('pha2', 2);
-      _run_command('punlearn', 'tgextract2');
-      _run_command('tgextract2',
-		   'infile='.$evt2,
-		   'outfile='.$new->pha2,
-		   'tg_srcid_list=all',
-		   'tg_part_list=header_value',
-		   ( $detnam == HRC_S ? ('region_file=CALDB') : () ),
-		   'tg_order_list='.join(',',@order_list),
-		   'clobber=yes',
-		   (exists $opts{min_bin_leg} ? ( 'min_bin_leg='.$opts{min_bin_leg} ) : () ),
-		   (exists $opts{max_bin_leg} ? ( 'max_bin_leg='.$opts{max_bin_leg} ) : () ),
-		   (exists $opts{bin_size_leg} ? ( 'bin_size_leg='.$opts{bin_size_leg} ) : () ),
-		   (exists $opts{num_bins_leg} ? ( 'num_bins_leg='.$opts{num_bins_leg} ) : () ),
-		  );
+      if (1) {
+	_run_command('punlearn', 'tgextract');
+	_run_command('tgextract',
+		     'infile='.$evt2,
+		     'outfile='.$new->pha2,
+		     'tg_srcid_list=all',
+		     'tg_part_list=header_value',
+		     ( $detnam == HRC_S ? ('inregion_file=CALDB') : () ),
+		     'tg_order_list='.join(',',@order_list),
+		     'clobber=yes',
+		     'outfile_type=pha_typeII',
+		     'ancrfile=none',
+		     'respfile=none',
+		     (exists $opts{min_bin_leg} ? ( 'min_bin_leg='.$opts{min_bin_leg} ) : () ),
+		     (exists $opts{max_bin_leg} ? ( 'max_bin_leg='.$opts{max_bin_leg} ) : () ),
+		     (exists $opts{bin_size_leg} ? ( 'bin_size_leg='.$opts{bin_size_leg} ) : () ),
+		     (exists $opts{num_bins_leg} ? ( 'num_bins_leg='.$opts{num_bins_leg} ) : () ),
+		    );
+      }
+      else {
+	_run_command('punlearn', 'tgextract2');
+	_run_command('tgextract2',
+		     'infile='.$evt2,
+		     'outfile='.$new->pha2,
+		     'tg_srcid_list=all',
+		     'tg_part_list=header_value',
+		     ( $detnam == HRC_S ? ('region_file=CALDB') : () ),
+		     'tg_order_list='.join(',',@order_list),
+		     'clobber=yes',
+		     (exists $opts{min_bin_leg} ? ( 'min_bin_leg='.$opts{min_bin_leg} ) : () ),
+		     (exists $opts{max_bin_leg} ? ( 'max_bin_leg='.$opts{max_bin_leg} ) : () ),
+		     (exists $opts{bin_size_leg} ? ( 'bin_size_leg='.$opts{bin_size_leg} ) : () ),
+		     (exists $opts{num_bins_leg} ? ( 'num_bins_leg='.$opts{num_bins_leg} ) : () ),
+		    );
+      }
 
       return 1 unless $opts{grmf}; # we can stop here
 
