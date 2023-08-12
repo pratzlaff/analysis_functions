@@ -12,9 +12,13 @@ datadir=basedir+'/data'
 def model():
     return np.loadtxt('/data/legs/rpete/flight/hz43/model/non_LTE/15.model', unpack=True)
 
-def obsids():
+def obsids(exclude=None):
     global basedir
-    return np.loadtxt(basedir+'/obsids', usecols=(0,), unpack=True).astype(int)
+    obsids = np.loadtxt(basedir+'/obsids', usecols=(0,), unpack=True).astype(int)
+    if exclude:
+        for o in exclude:
+            obsids = obsids[obsids!=o]
+    return obsids
 
 def predicted_rates(obsids):
     rates = []
@@ -31,13 +35,13 @@ def predicted_rates(obsids):
     return np.array(rates)
 
 # return numpy arrays of HZ 43
-def obsids_years(detector=None, offaxis=False):
+def obsids_years(detector=None, offaxis=False, exclude=None):
 
     if 'data' not in obsids_years.__dict__:
 
         obsids_, years, dets = [], [], []
 
-        for obsid in obsids():
+        for obsid in obsids(exclude=exclude):
             pha2 = util.pha2_file(obsid)
             hdr = util.read_header(pha2)
             obsids_.append(obsid)
