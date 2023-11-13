@@ -90,7 +90,7 @@ def zeroth_rates(obsids, tg_reprocess='tg_reprocess'):
         hdr = read_header(evt2)
 
         x0, y0, r0, x, y, jnk, jnk = read_evt2(evt2)
-        r0 = r0*2
+        r0 = r0*2.5
         #sys.stderr.write("r0={}".format(r0)+"\n")
 
         # background annulus
