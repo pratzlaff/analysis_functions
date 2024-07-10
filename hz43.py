@@ -58,7 +58,13 @@ def obsids_years(detector=None, offaxis=False, exclude=None):
         years = years[si]
         dets = dets[si]
 
-        onaxis_mask = (obsids_!=1516) & (obsids_!=1004) & (obsids_!=1005) & (obsids_!=2601) & (obsids_!=2603) & (obsids_!=18415)
+        offaxis_obsids = [1516, 1004, 1005, 2601, 2603, 18415]
+        onaxis_mask = np.full(obsids_.size, True)
+
+        for offaxis_obsid in offaxis_obsids:
+            onaxis_mask = onaxis_mask & (obsids_ != offaxis_obsid)
+
+        # onaxis_mask = (obsids_!=1516) & (obsids_!=1004) & (obsids_!=1005) & (obsids_!=2601) & (obsids_!=2603) & (obsids_!=18415)
 
         hrci_mask = dets == 'HRC-I'
         hrcs_mask = dets == 'HRC-S'
