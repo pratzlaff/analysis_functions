@@ -82,6 +82,7 @@ def zeroth_rates(obsids, tg_reprocess='tg_reprocess'):
 
     rates = np.zeros(obsids.size)
     rate_errs = rates.copy()
+    exposures = rates.copy()
 
     for i in range(obsids.size):
         obsid = obsids[i]
@@ -111,11 +112,14 @@ def zeroth_rates(obsids, tg_reprocess='tg_reprocess'):
 
         net = src - bg
         net_err = np.sqrt(src_err**2 + bg_err**2)
-        
-        rates[i] = net/hdr['exposure']
-        rate_errs[i] = net_err/hdr['exposure']
 
-    return rates, rate_errs
+        exposure = hdr['exposure']
+
+        rates[i] = net/exposure
+        rate_errs[i] = net_err/exposure
+        exposures[i] = exposure
+
+    return rates, rate_errs, exposures
 
 def read_evt2(filename):
     hdulist = astropy.io.fits.open(filename)
