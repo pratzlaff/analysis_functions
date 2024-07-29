@@ -1,0 +1,546 @@
+#! /usr/bin/perl -w
+use strict;
+
+=head1 NAME
+
+hplot - plot histogram of events
+
+=head1 SYNOPSIS
+
+hplot [options] file
+
+=head1 DESCRIPTION
+
+Plots a histogram of events binned against some column. By default all
+events are binned versus time (see I<--bincol> to change this), with a bin
+size of 1 (see I<--binsize> to change the binning size).
+
+=head1 OPTIONS
+
+=over 4
+
+=item --help
+
+Show help and exit.
+
+=item --version
+
+Show version and exit.
+
+=item --bincol=s
+
+Column to bin against. Default is I<time>.
+
+=item --binsize=s
+
+Size of each bin. Default is 1.
+
+=item --line
+
+Plot histogram values as a line plot.
+
+=item --points
+
+Plot histogram values as points.
+
+=item --err
+
+Draw error bars, calculated as square root of the number of events
+in each bin.
+
+=item --low=f --high=f
+
+Central values for the first and last bins. Defaults are min/max of the
+binned column.
+
+=item --xlog --ylog
+
+Use logarithmic scale for I<x> and I<y> axes.
+
+=item --dev=s
+
+PGPLOT output device. Defaults to contents of environment variable
+I<PGPLOT_DEV> if it exists, otherwise I</xs>. Available devices can be
+listed with the I<--dlist> option.
+
+=item --dlist
+
+List available PGPLOT devices and exit.
+
+=item --extname=s
+
+FITS binary table containing data. Default is I<events>.
+
+=item --title=s --xtitle=s --ytitle=s
+
+Title for plot, and I<x> and I<y> axes.
+
+=item --dcolor=i --tcolor=i --acolor=i
+
+Colors for data, text and axes, respectively. These are PGPLOT colors,
+and must be specified by number. The PGPLOT colors are listed below.
+Note that whether background and foreground colors are black or white
+depends on the plotting device, and these can be swapped with the
+I<--cinvert> option.
+
+=over 4
+
+0 = background color
+
+1 = foreground color
+
+2 = red
+
+3 = green
+
+4 = blue
+
+5 = cyan
+
+6 = magenta
+
+7 = yellow
+
+=back
+
+=item --cinvert
+
+Exchange foreground and background colors. Useful for plotting black
+on white on some devices (e.g., PNG image).
+
+=item --xoffset=f --xscale=f
+
+Offset and scale I<x> values before binning. Note that offset is
+performed before scaling.
+
+=item --print
+
+Print histogram data to stdout in the form of an rdb table.
+
+=item --rfilter=s
+
+Event filtering can be achieved using the --rfilter option. This option expects
+a string in the cfitsio-style row filtering syntax. Some examples...
+
+=over 4
+
+To use only events whose PHA is less than 255:
+
+    hplot --rfilter='pha < 255' evt.fits
+
+=back
+
+=over 4
+
+To use only events in a bounding box in tdetx, tdety space, pha values
+less than 255:
+
+    hplot --rfilter='pha<255 && tdetx>10 && tdetx<20 && tdety>10 && tdety<20' evt.fits
+
+=back
+
+=over 4
+
+To plot events versus pha in a circular region in x, y space centered about (10,20) with a
+radius of 5, with low and high PHA values of 60 and 150:
+
+    hplot --bincol=pha --rfilter='circle(10,20,5,x,y)' --low=60 --high=150 evt.fits
+
+=back
+
+CFITSIO has a numer of useful row-filtering capabilities, see
+https://heasarc.gsfc.nasa.gov/docs/software/fitsio/c/c_user/node102.html
+for more details.
+
+=item --gti
+
+Filter events on GTI.
+
+=item --gtiext=s
+
+Name of the GTI table. The default value is 'gti'.
+
+=item --gtifile=s
+
+File from which to read the GTI table. Default is the event file. Use of this
+option implies I<--gti>
+
+=item --gtiscale
+
+Scale bins to compensate for GTI. Only valid if I<--bincol=time>. Use of this
+option implies I<--gti>.
+
+=back
+
+=head1 AUTHOR
+
+Pete Ratzlaff E<lt>pratzlaff@cfa.harvard.eduE<gt> May 2006
+
+=head1 SEE ALSO
+
+perl(1).
+
+=cut
+
+BEGIN { $^W = 0; };
+$^W = 1;
+
+my $version = '0.1';
+
+use Config;
+use lib '/home/rpete/local/perlmods';
+use lib '/home/rpete/local/perlmods/'.$Config{archname};
+
+$| = 1;
+
+#
+# Plot events in bin of your choice.
+#
+# by Pete Ratzlaff
+# September, 1999
+#
+
+=begin comment
+
+BEGIN {
+    my $hostname = (split /\./, `hostname`)[0]; chomp $hostname;
+    if ($hostname ne 'legs') {
+	$ENV{LD_LIBRARY_PATH} = '/opt/X11R6/lib:/home/rpete/local/lib'.($ENV{LD_LIBRARY_PATH} ? ':'.$ENV{LD_LIBRARY_PATH} : '');
+	$ENV{PGPLOT_DIR} = '/home/rpete/local/pgplot';
+	$ENV{PGPLOT_FONT} = '/home/rpete/local/pgplot/grfont.dat';
+	$ENV{PGPLOT_DEV} = '/xs';
+    }
+};
+
+=cut
+
+use PDL;
+use Astro::FITS::CFITSIO;
+use PGPLOT;
+use Getopt::Long;
+use Carp;
+use Chandra::Tools::Common qw( read_bintbl_cols check_status );
+use FindBin;
+use IO::File;
+
+my %default_opts = (
+		    dev => $ENV{PGPLOT_DEV} || '/xs',
+		    bincol => 'time',
+		    binsize => 1,
+		    xscale => 1,
+		    xoffset => 0,
+		    ytitle => 'events',
+		    dcolor => 1,
+		    acolor => 1,
+		    tcolor => 1,
+		    gtiext => 'gti',
+                    hist => 1,
+		   );
+my %opt = %default_opts;
+
+GetOptions(\%opt,
+	   'help!', 'version!', 'debug!',
+	   'dev=s', 'rfilter=s', 'xtitle=s', 'ytitle=s', 'title=s',
+	   'extname=s', 'binsize=s', 'bincol=s', 'low=f', 'high=f',
+	   'xscale=s', 'xoffset=s', 'xlog!', 'ylog!',
+	   'line!', 'points!', 'dcolor=i', 'tcolor=i', 'acolor=i',
+	   'cinvert!', 'print!', 'dlist!',
+	   'gti!', 'gtifile=s', 'gtiscale!', 'gtiext=s', 'err!',
+           'hist!',
+	   ) or die "Try --help for more information.\n";
+if ($opt{debug}) {
+  $SIG{__WARN__} = \&Carp::cluck;
+  $SIG{__DIE__} = \&Carp::confess;
+}
+$opt{help} and _help();
+$opt{version} and _version();
+$opt{dlist} and pgldev(), exit 0;
+
+# a single filename is allowed
+@ARGV == 1 or
+    die "$0: missing filename argument\nTry --help for more information.\n";
+my $file = shift;
+
+$opt{bincol} = lc $opt{bincol};
+
+# make gti options consistent
+if ($opt{gtiscale}) {
+  $opt{bincol} eq 'time' or die "cannot perform GTI scaling unless binning against time";
+  $opt{gti} = 1;
+}
+$opt{gti} = 1 if $opt{gtifile};
+$opt{gtifile} = $file if $opt{gti} and !defined $opt{gtifile};
+
+$opt{extname} or ($file =~ /\[[^\]]+\]$/) or
+  $opt{extname} = 'events';
+
+# evaluate xscale and xoffset options
+$opt{xoffset} = eval $opt{xoffset};
+if ($@) {
+  warn("$0: Invalid --xoffset option, setting to 0\n");
+  $opt{xoffset} = 0;
+}
+
+$opt{xscale} = eval $opt{xscale};
+if ($@ or !$opt{xscale}) {
+  warn("$0: Invalid --xscale option, setting to 1\n");
+  $opt{xscale} = 1;
+}
+
+$opt{binsize} = eval $opt{binsize};
+if ($@ or $opt{binsize}<=0) {
+  warn("$0: Invalid --binsize option, setting to 1\n");
+  $opt{binsize} = 1;
+}
+
+print STDERR <<EOP;
+
+File:           $file
+Extension:      @{[$opt{extname} ? $opt{extname} : 'user-specified via input filename']}
+Column:         $opt{bincol}
+Bin size:       $opt{binsize}
+Row filter:     @{[$opt{rfilter} ? $opt{rfilter} : 'none']}
+Output device:  @{[$opt{dev} ? $opt{dev} : 'query']}
+X offset:       $opt{xoffset}
+X scale:        $opt{xscale}
+GTI file:       @{[$opt{gtifile} ? $opt{gtifile} : 'none']}
+
+EOP
+
+# add table spec to filename
+$file .= "[$opt{extname}]" if $opt{extname};
+
+# open file
+my $s = 0;
+my $fptr = Astro::FITS::CFITSIO::open_file($file,Astro::FITS::CFITSIO::READONLY(),$s);
+check_status($s) or die "$0: could not open FITS file '$file'\n";
+
+my $n;
+$fptr->get_num_rows($n,$s);
+check_status($s) or die "$0: error getting nrows from FITS file '$file'\n";
+$n or die "$0: no events in FITS file '$file'\n";
+
+my $colnum;
+$fptr->get_colnum(0,$opt{bincol},$colnum,$s);
+check_status($s) or die "$0: error finding column '$opt{bincol}' in FITS file '$file'\n";
+
+#
+# set plot titles
+#
+defined $opt{title} or
+    $opt{title} = $file;
+
+if (!defined $opt{xtitle}) {
+  $opt{xtitle} = $opt{bincol};
+  my $unit;
+  $fptr->read_key(Astro::FITS::CFITSIO::TSTRING(),'TUNIT'.$colnum,$unit,undef,$s);
+  if ($unit) {
+    $unit =~ s/\'\s*(.*?)\s*\'/$1/;
+    $opt{xtitle} .= " ($unit)";
+  }
+  $s = 0; # in case keyword wasn't found
+  if ($opt{xoffset}) {
+    $opt{xtitle} = "$opt{xtitle} + ".$opt{xoffset} if $opt{xoffset} > 0;
+    $opt{xtitle} = "$opt{xtitle} - ".abs($opt{xoffset}) if $opt{xoffset} < 0;
+
+    $opt{xtitle} = "( $opt{xtitle} ) x $opt{xscale}" if $opt{xscale} != 1;
+  }
+  else {
+    $opt{xtitle} .= " x $opt{xscale}" if $opt{xscale} != 1;
+  }
+
+  $opt{xtitle} .= ", bin size = $opt{binsize}";
+
+};
+
+#
+# Read data from file
+#
+print STDERR 'Reading FITS file...';
+STDERR->flush;
+my %options = ( status => 1 );
+$options{rfilter} =  $opt{rfilter} if $opt{rfilter};
+my @colnames = ($opt{bincol}, $opt{gti}&& $opt{bincol} ne'time'? ('time') : () );
+my @cols= read_bintbl_cols($fptr, @colnames, \%options) or
+  die "$0 - error reading FITS file\n";
+print STDERR " done\n";
+STDERR->flush;
+
+my $data = shift @cols;
+my $time = @cols ? shift @cols : $data->copy;
+
+my $not_nan = which($data == $data);
+$_ = $_->index($not_nan)->copy for $data, $time;
+
+$fptr->close_file($s);
+check_status($s) or warn "$0: error closing FITS file '$file'\n";
+$data += $opt{xoffset} if $opt{xoffset};
+$data *= $opt{xscale} if $opt{xscale} != 1;
+
+my ($gti_start, $gti_stop);
+if ($opt{gti}) {
+  ($gti_start, $gti_stop) = _read_gti($opt{gtifile}) or die "could not read gti file $opt{gtifile}";
+
+  # we must scale/offset gti if we've done the same for the time column
+  if ($opt{bincol} eq 'time') {
+    if ($opt{xoffset}) { $_ += $opt{xoffset} for $gti_start, $gti_stop; }
+    if ($opt{xscale} != 1) { $_ *= $opt{xscale} for $gti_start, $gti_stop; }
+  }
+
+  my $gti_mask = Chandra::Tools::Common::good_time_mask($data,$gti_start,$gti_stop);
+  my $gti_index = which($gti_mask);
+  $gti_index->nelem or die "no events left after GTI filtering";
+  $data = $data->index($gti_index)->sever;
+}
+
+#
+# now we slice the data up
+#
+$opt{low} = $data->min unless defined $opt{low};
+$opt{high} = $data->max unless defined $opt{high};
+
+my $index = which(
+  ($data >= $opt{low}-$opt{binsize}/2) &
+  ($data <= $opt{high}+$opt{binsize}/2)
+);
+$index->nelem or die "no valid values for $opt{bincol} in [".($opt{low}-$opt{binsize}/2).', '.($opt{high}+$opt{binsize}/2)."]\n";
+$data = $data->index($index);
+
+#
+# ensure we actually have something to plot
+#
+$data->nelem or die "No data to plot!\n";
+
+my ($data_vals, $event_hist);
+
+($data_vals, $event_hist) = hist($data,$opt{low}-$opt{binsize}/2,$opt{high}+$opt{binsize}/2,$opt{binsize});
+
+my $err = sqrt($event_hist);
+
+if ($data->nelem != $event_hist->sum) {
+    print STDERR <<EOP;
+
+*** Warning ***
+   Events in FITS file ${\($data->nelem)}
+   Events in binned histogram ${\($event_hist->sum)}
+***************
+
+EOP
+}
+
+if ($opt{gtiscale}) {
+  my $scale = ones($event_hist->nelem);
+  # FIXME this is braindead, should do it properly with threading
+  for (0..$event_hist->nelem-1) {
+    my ($tmin, $tmax) = (
+			 $data_vals->at($_)-$opt{binsize}/2,
+			 $data_vals->at($_)+$opt{binsize}/2,
+			 );
+    my $good_time = Chandra::Tools::Common::good_time( $tmin, $tmax, $gti_start, $gti_stop);
+    $scale->set( $_, $good_time ? $opt{binsize} / $good_time : 0);
+  }
+  $event_hist *= $scale;
+  $err *= $scale;
+}
+
+my ($errl, $errh) = ($event_hist-$err, $event_hist+$err);
+
+my @xrange = (
+	      $opt{low} - ($opt{low}<$opt{high} ? $opt{binsize} : -$opt{binsize}),
+	      $opt{high} + ($opt{low}<$opt{high} ? $opt{binsize} : -$opt{binsize}),
+	     );
+my @yrange = (0, ($opt{err} ? ($event_hist+$err)->max : $event_hist->max) * 1.1);
+
+my $axis_opts = 0;
+
+if ($opt{ylog}) {
+    my $badval = 0.7;
+    $axis_opts += 20;
+    $_ = $_->float->log10->badmask(log10($badval)) for $event_hist, $errl, $errh;
+#    $event_hist = $event_hist->float->log10->badmask(log10($badval));
+    $yrange[0] = log10(0.7);
+    $yrange[1] = log10($yrange[1] ? $yrange[1] : 0.7);
+    $yrange[1] += ($yrange[1] - $yrange[0])*0.1;
+}
+
+if ($opt{xlog}) {
+    my $badval = 0.7;
+    $axis_opts += 10;
+    $data_vals = $data_vals->float->log10->badmask(log10($badval));
+    $xrange[0] = log10($xrange[0] > 0 ? $xrange[0] : 0.7);
+    $xrange[1] = log10($xrange[1] > 0 ? $xrange[1] : 0.7);
+}
+
+
+pgopen($opt{dev}) > 0 or die;
+
+$opt{cinvert} and pgscr(0,1,1,1), pgscr(1,0,0,0);
+
+pgsave();
+pgsci($opt{acolor});
+pgenv(@xrange,@yrange,0,$axis_opts);
+pgunsa();
+
+pgsave();
+pgsci($opt{dcolor});
+if (defined $opt{line}) {
+    pgline($event_hist->nelem,$data_vals->float->get_dataref,$event_hist->float->get_dataref);
+}
+elsif (defined $opt{points}) {
+    pgpt($event_hist->nelem,$data_vals->float->get_dataref,$event_hist->float->get_dataref,17);
+}
+else {
+    pgbin($event_hist->nelem,$data_vals->float->get_dataref,$event_hist->float->get_dataref,1);
+}
+
+if ($opt{err}) {
+  pgerry($errl->nelem, $data_vals->float->get_dataref, $errh->float->get_dataref, $errl->float->get_dataref, 0);
+}
+pgunsa();
+
+
+pgsave();
+pgsci($opt{tcolor});
+pglab($opt{xtitle},$opt{ytitle},$opt{title});
+if ($opt{rfilter}) {
+  pgsch(0.7);
+  pgtext(
+	 $xrange[0] + ($xrange[1]-$xrange[0])*0.05,
+	 $yrange[1] - ($yrange[1]-$yrange[0])*0.05,
+	 $opt{rfilter},
+	);
+}
+pgunsa();
+
+pgclos();
+
+# print an rdb table of histogram data to stdout
+if ($opt{print}) {
+  my @cols = ($opt{bincol}, 'events');
+  push @cols, 'err' if $opt{err};
+  print join("\t", @cols), "\n";
+  print join("\t", ('N')x@cols), "\n";
+
+  $PDL::IO::Misc::colsep = '';
+  my $fmt = "%.8g\t%.8g";
+  $fmt .= "\t%.8g" if $opt{err};
+  wcols $fmt, $data_vals, $event_hist, ($opt{err} ? ($err) : ());
+}
+
+exit 0;
+
+sub _help {
+  exec("$Config{installbin}/perldoc", '-F', $FindBin::Bin . '/' . $FindBin::RealScript);
+}
+
+sub _version {
+  print $version,"\n";
+  exit 0;
+}
+
+sub _read_gti {
+  my $file = shift;
+
+  return read_bintbl_cols($file,'start','stop', { extname => $opt{gtiext} });
+
+}
