@@ -214,6 +214,14 @@ BEGIN {
 
 =cut
 
+# use Alien::PGPLOT;
+# use Env qw( @PATH );
+#
+# BEGIN {
+  # unshift @PATH, Alien::PGPLOT->bin_dir;
+  # print "@PATH";
+# };
+
 BEGIN {
   our %ENV;
   -d '/proj/web-cxc/cgi-gen/LETG/build/pgplot-5.22' and
