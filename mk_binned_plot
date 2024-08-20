@@ -228,7 +228,6 @@ BEGIN {
     $ENV{PGPLOT_DIR}='/proj/web-cxc/cgi-gen/LETG/build/pgplot-5.22';
 };
 
-
 use PDL;
 use Astro::FITS::CFITSIO;
 use PGPLOT;
