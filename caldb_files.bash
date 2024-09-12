@@ -64,6 +64,9 @@ match_caldb_file() {
     # second HRC-S HV change, test observation
     [ $obsid -eq 62635 ] && dateobs=2021-05-15
 
+    # third HRC-S HV change, "fake" test observation
+    [ $obsid -eq 78427 ] && dateobs=2024-09-14
+
     local det
     local detdir
 
