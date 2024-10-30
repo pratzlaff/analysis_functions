@@ -11,8 +11,8 @@ generate_garfs() {
 
     mkdir -p "$outdir"
 
-    local evt2=$(ls "$indir"/*_evt2.fits)
-    local pha2=$(ls "$indir"/*_pha2.fits)
+    local evt2=$(\ls "$indir"/*_evt2.fits)
+    local pha2=$(\ls "$indir"/*_pha2.fits)
     local asol=$(asol_stack "$indir"/../primary)
 
     local dtf1
@@ -22,13 +22,13 @@ generate_garfs() {
 
     local detnam=$(dmkeypar "$pha2" detnam echo+)
     case "$detnam" in
-	HRC-*) dtf1=$(ls "$indir"/../primary/*_dtf1.fits* | tail -1) ;;
+	HRC-*) dtf1=$(\ls "$indir"/../primary/*_dtf1.fits* | tail -1) ;;
 	ACIS-[456789]*) detnam=ACIS-S ; dtf1="$evt2" ;;
 	*) echo "generate_garfs: unrecognized DETNAM=$detnam" 1>&2 ; return 1 ;;
     esac
 
     local row=0
-    dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | grep -v '^#' | while read line
+    dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | \grep -v '^#' | while read line
     do
 	(( row++ ))
 	read tg_m tg_part <<<$(echo "$line")
@@ -47,8 +47,8 @@ generate_garfs() {
 
 	local bpix1
 	case "${detnam,,}" in
-	    hrc*)  bpix1=$(ls "$indir"/*_bpix1.fits 2>/dev/null)
-		   [ -z "$bpix1" ] && bpix1=$(ls "$indir"/../secondary/*_bpix1.fits* | tail -1)
+	    hrc*)  bpix1=$(\ls "$indir"/*_bpix1.fits 2>/dev/null)
+		   [ -z "$bpix1" ] && bpix1=$(\ls "$indir"/../secondary/*_bpix1.fits* | tail -1)
 		   echo pset ardlib AXAF_${detnam}_BADPIX_FILE="${bpix1}[BADPIX]"
 		   pset ardlib AXAF_${detnam}_BADPIX_FILE="${bpix1}[BADPIX]"
 		   ;;
@@ -97,8 +97,8 @@ generate_0th_arf() {
 
     mkdir -p "$asphist_dir" "$outdir"
 
-    local evt2=$(ls "$indir"/*_evt2.fits)
-    local pha2=$(ls "$indir"/*_pha2.fits)
+    local evt2=$(\ls "$indir"/*_evt2.fits)
+    local pha2=$(\ls "$indir"/*_pha2.fits)
 
     local obsid=$(dmkeypar "$pha2" obs_id echo+)
     local detnam=$(dmkeypar "$pha2" detnam echo+)
@@ -120,7 +120,7 @@ generate_0th_arf() {
     local rmffile="$rmf_dir/${detnam}-LEG_1.rmf"
     local arf="$outdir/${obsid}_0th.arf"
     local asphist="${asphist_dir}/${obsid}_asphist.fits"
-    local dtf=$(ls "$indir"/../primary/*_dtf1.fits*)
+    local dtf=$(\ls "$indir"/../primary/*_dtf1.fits*)
 
     punlearn asphist
     asphist \

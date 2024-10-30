@@ -29,9 +29,9 @@ lsfparm_files() {
 	   ;;
     esac
 
-    local posfile=$(ls "$dir/${det}"*"${arm}1D"*lsfparm*.fits | egrep "D[[:digit:]]{4}(-[[:digit:]]{2}){2}lsfparm${version}.fits" | tail -1)
+    local posfile=$(\ls "$dir/${det}"*"${arm}1D"*lsfparm*.fits | \egrep "D[[:digit:]]{4}(-[[:digit:]]{2}){2}lsfparm${version}.fits" | tail -1)
 
-    local negfile=$(ls "$dir/${det}"*"${arm}-1D"*lsfparm*.fits | egrep "D[[:digit:]]{4}(-[[:digit:]]{2}){2}lsfparm${version}.fits" | tail -1)
+    local negfile=$(\ls "$dir/${det}"*"${arm}-1D"*lsfparm*.fits | \egrep "D[[:digit:]]{4}(-[[:digit:]]{2}){2}lsfparm${version}.fits" | tail -1)
     echo "$negfile" "$posfile"
 }
 
@@ -66,6 +66,7 @@ match_caldb_file() {
 
     # third HRC-S HV change, "fake" test observation
     [ $obsid -eq 78427 ] && dateobs=2024-09-21
+    [ $obsid -eq 78377 ] && dateobs=2024-09-21
 
     local det
     local detdir
@@ -90,7 +91,7 @@ match_caldb_file() {
 	   ;;
     esac
 
-    local files=$(ls "$dir/$det"*.fits | egrep ${det}D'[[:digit:]]{4}(-[[:digit:]]{2}){2}'"${type}${version}.fits")
+    local files=$(\ls "$dir/$det"*.fits | \egrep ${det}D'[[:digit:]]{4}(-[[:digit:]]{2}){2}'"${type}${version}.fits")
 
     local cvsd
     local file_last
@@ -177,7 +178,7 @@ caldb_files() {
     local det="$2"
     local type="$3"
 
-    local files=$(ls "$dir/$det"*.fits | egrep ${det}D'[[:digit:]]{4}(-[[:digit:]]{2}){2}'"$type"'N[[:digit:]]{4}.fits')
+    local files=$(\ls "$dir/$det"*.fits | \egrep ${det}D'[[:digit:]]{4}(-[[:digit:]]{2}){2}'"$type"'N[[:digit:]]{4}.fits')
 
     if [ -z "$files" ]; then
 	echo "caldb_files: no files found in '$dir'" 1>&2
