@@ -1975,14 +1975,14 @@ sub hrcs_gainfile {
   my $dateobs = $header->{'DATE-OBS'};
   my $f;
   if ( $obsid == 14238 ) {
-    $f = $ENV{CALDB} . '/data/chandra/hrc/t_gmap/hrcsD2012-03-29t_gmapN0002.fits';
+    $f = $ENV{CALDB} . '/data/chandra/hrc/t_gmap/hrcsD2012-03-29t_gmapN0004.fits';
   }
   elsif (
 	 $obsid == 14324 or
 	 $obsid == 14396 or
 	 $obsid == 14397
 	) {
-    $f = $ENV{CALDB} . '/data/chandra/hrc/t_gmap/hrcsD1999-07-22t_gmapN0002.fits';
+    $f = $ENV{CALDB} . '/data/chandra/hrc/t_gmap/hrcsD1999-07-22t_gmapN0004.fits';
   }
   die $f if defined $f and ! -f $f;
   return $f;
