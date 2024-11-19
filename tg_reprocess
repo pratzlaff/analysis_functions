@@ -838,7 +838,7 @@ sub _process_hrc_directory {
     # recompute deadtime statistics
     # http://cxc.harvard.edu/ciao/threads/hrc_dtfstats/index.py.html
     $new->addtype('dtfstats');
-    dtcor($old->dtf1, $new->dtfstats, $new->evt2);
+    dtcor($old->dtf1, $new->dtfstats, $old->std_flt1, $new->evt2);
 
     # as of ciao 4.4, time filtering with opt=all does not correctly
     # modify the GTI, so to work around, remove opt=all above and then
@@ -1934,13 +1934,13 @@ sub tg_m_seq {
 
 sub dtcor {
 
-  my ($dtf, $dtfstats, $evt2) = @_;
+  my ($dtf1, $dtfstats, $flt1, $evt2) = @_;
 
   _run_command('punlearn', 'hrc_dtfstats');
   _run_command('hrc_dtfstats',
-	       'infile=' . $dtf,
+	       'infile=' . $dtf1,
 	       'outfile=' . $dtfstats,
-	       'gtifile=' . $evt2 . '[gti]',
+	       'gtifile=' . $flt1 . '[filter]',
 	       'clobber=yes',
 	      );
 
