@@ -870,7 +870,7 @@ sub _process_hrc_directory {
 		  );
 
       $new->addtype('dtfstats_dtffilt');
-      dtcor($old->dtf1, $new->dtfstats_dtffilt, $new->evt2_dtffilt);
+      dtcor($old->dtf1, $new->dtfstats_dtffilt, $old->std_flt1, $new->evt2_dtffilt);
 
       if ($grating != NONE) {
 	_run_command('punlearn', 'dmappend');
