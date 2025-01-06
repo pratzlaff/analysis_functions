@@ -196,7 +196,7 @@ latest_version_from_caldb_files() {
 asol_stack()
 {
     local dir="$1"
-    ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
+    \ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
     #ls "$dir"/pcadf*asol1.fits* | tr '\n' ,
 }
 
