@@ -20,11 +20,11 @@ def obsids(exclude=None):
             obsids = obsids[obsids!=o]
     return obsids
 
-def predicted_rates(obsids):
+def predicted_rates(obsids, archive=False):
     rates = []
     model_flux = None
     for obsid in obsids:
-        w1, w2, specresp = response.read_arf(response.zeroth_arf_file(obsid))
+        w1, w2, specresp = response.read_arf(response.zeroth_arf_file(obsid, archive=archive))
         wav = 0.5*(w1+w2)
 
         if model_flux is None:
@@ -35,14 +35,14 @@ def predicted_rates(obsids):
     return np.array(rates)
 
 # return numpy arrays of HZ 43
-def obsids_years(detector=None, offaxis=False, exclude=None):
+def obsids_years(detector=None, offaxis=False, exclude=None, archive=False):
 
     if 'data' not in obsids_years.__dict__:
 
         obsids_, years, dets = [], [], []
 
         for obsid in obsids(exclude=exclude):
-            pha2 = util.pha2_file(obsid)
+            pha2 = util.pha2_file(obsid, archive=archive)
             hdr = util.read_header(pha2)
             obsids_.append(obsid)
             years.append(hdr['year'])

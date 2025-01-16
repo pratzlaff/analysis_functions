@@ -16,19 +16,19 @@ pdir=`mktemp -d`
 
 # check if tmp dir was created
 if [[ ! "$pdir" || ! -d "$pdir" ]]; then
-    echo "Could not create temp dir"
+    \echo "Could not create temp dir"
     exit 1
 fi
 
 # deletes the temp directory
 function cleanup {      
     rm -rf "$pdir"
-    echo "Deleted temp working directory $pdir" 1>&2
+    \echo "Deleted temp working directory $pdir" 1>&2
 }
 
 # register the cleanup function to be called on the EXIT signal
 trap 'exit 1' HUP INT PIPE QUIT TERM
 trap cleanup EXIT
 
-#PFILES="$pdir;"$(echo "$PFILES" | perl -F';' -le 'print $F[1]')
+#PFILES="$pdir;"$(\echo "$PFILES" | perl -F';' -le 'print $F[1]')
 PFILES="$pdir;${PFILES#*;}"

@@ -10,6 +10,7 @@ import flux
 import response
 
 basedir='/data/legs/rpete/flight/hz43'
+archivedir='/data/loss/rpete/hz43'
 datadir=basedir+'/data'
 
 tg_parts = { 'HEG' : 1, 'MEG' : 2, 'LEG' : 3 }
@@ -42,13 +43,29 @@ def w2e(wavelength):
 def bins2energy(lo, hi):
     return w2e(0.5 * (lo + hi))
 
-def evt2_file(obsid, tg_reprocess='tg_reprocess'):
+def evt2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
+
+    if archive:
+        global archivedir
+        obsid = f'{int(obsid):05d}'
+        globstr = f'{archivedir}/[is]/{obsid}/analysis/hrcf{obsid}_evt2.fits'
+        #sys.stderr.write(globstr+"\n")
+        return glob.glob(globstr)[0]
+
     global datadir
     globstr = '{}/{}/{}/*_evt2.fits'.format(datadir, obsid, tg_reprocess)
      #sys.stderr.write(globstr+"\n")
     return glob.glob(globstr)[0]
 
-def pha2_file(obsid, tg_reprocess='tg_reprocess'):
+def pha2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
+
+    if archive:
+        global archivedir
+        obsid = f'{int(obsid):05d}'
+        globstr = f'{archivedir}/[is]/{obsid}/analysis/hrcf{obsid}_pha2.fits'
+        #sys.stderr.write(globstr+"\n")
+        return glob.glob(globstr)[0]
+
     global datadir
     globstr = '{}/{}/{}/*_pha2.fits'.format(datadir, obsid, tg_reprocess)
     return glob.glob(globstr)[0]
@@ -78,7 +95,7 @@ def read_header(filename):
         header['year'] = 1998 + (header['mjd-obs'] - 50814)/365.2425
     return header
 
-def zeroth_rates(obsids, tg_reprocess='tg_reprocess'):
+def zeroth_rates(obsids, tg_reprocess='tg_reprocess', archive=False):
 
     rates = np.zeros(obsids.size)
     rate_errs = rates.copy()
@@ -86,7 +103,7 @@ def zeroth_rates(obsids, tg_reprocess='tg_reprocess'):
 
     for i in range(obsids.size):
         obsid = obsids[i]
-        evt2 = evt2_file(obsid, tg_reprocess=tg_reprocess)
+        evt2 = evt2_file(obsid, tg_reprocess=tg_reprocess, archive=archive)
         sys.stderr.write('Using '+evt2+"\n")
         hdr = read_header(evt2)
 
@@ -144,26 +161,26 @@ def read_evt2(filename):
 def bg_mult(hdr):
     return hdr['backscal'] / (hdr['backscup']+hdr['backscdn'])
 
-def grating(obsid, tg_reprocess='tg_reprocess'):
-    pha2 = pha2_file(obsid, tg_reprocess)
+def grating(obsid, tg_reprocess='tg_reprocess', archive=False):
+    pha2 = pha2_file(obsid, tg_reprocess, archive=archive)
     hdr = read_header(pha2)
     return hdr['detnam']
 
-def detnam(obsid, tg_reprocess='tg_reprocess'):
-    pha2 = pha2_file(obsid, tg_reprocess)
+def detnam(obsid, tg_reprocess='tg_reprocess', archive=False):
+    pha2 = pha2_file(obsid, tg_reprocess, archive=archive)
     hdr = read_header(pha2)
     return hdr['detnam']
 
-def detnam(obsid, tg_reprocess='tg_reprocess'):
-    pha2 = pha2_file(obsid, tg_reprocess)
+def detnam(obsid, tg_reprocess='tg_reprocess', archive=False):
+    pha2 = pha2_file(obsid, tg_reprocess, archive=archive)
     hdr = read_header(pha2)
     return hdr['detnam']
 
-def get_spectrum(obsid, grating, combine=1, tg_reprocess='tg_reprocess'):
-    spectrum = get_spectra((obsid,), grating, combine, tg_reprocess)
+def get_spectrum(obsid, grating, combine=1, tg_reprocess='tg_reprocess', archive=False):
+    spectrum = get_spectra((obsid,), grating, combine, tg_reprocess, archive=archive)
     return spectrum
 
-def get_spectra2(obsids, arm, combine=1, tg_reprocess='tg_reprocess'):
+def get_spectra2(obsids, arm, combine=1, tg_reprocess='tg_reprocess', archive=False):
 
     global tg_parts
 
@@ -180,8 +197,8 @@ def get_spectra2(obsids, arm, combine=1, tg_reprocess='tg_reprocess'):
  
         obsid = obsids[i]
 
-        pha2 = pha2_file(obsid, tg_reprocess=tg_reprocess)
-        jnk, jnk, response_ = get_response(obsid, arm, maxorder=1)
+        pha2 = pha2_file(obsid, tg_reprocess=tg_reprocess, archive=archive)
+        jnk, jnk, response_ = get_response(obsid, arm, maxorder=1, archive=archive)
         data, hdr = read_pha2(pha2)
         exposure[i] = hdr['exposure']
 
@@ -265,7 +282,7 @@ def get_spectra2(obsids, arm, combine=1, tg_reprocess='tg_reprocess'):
 
     return retval
 
-def get_spectra(obsids, arm, combine=1, tg_reprocess='tg_reprocess'):
+def get_spectra(obsids, arm, combine=1, tg_reprocess='tg_reprocess', archive=False):
 
     global tg_parts
 
@@ -279,8 +296,8 @@ def get_spectra(obsids, arm, combine=1, tg_reprocess='tg_reprocess'):
     for i in range(len(obsids)):
 
         obsid = obsids[i]
-        pha2 = pha2_file(obsid, tg_reprocess=tg_reprocess)
-        jnk, jnk, response_ = response.get_response(obsid, arm, maxorder=1)
+        pha2 = pha2_file(obsid, tg_reprocess=tg_reprocess, archive=archive)
+        jnk, jnk, response_ = response.get_response(obsid, arm, maxorder=1, archive=archive)
 
         pha2_d, pha2_h = read_pha2(pha2)
 

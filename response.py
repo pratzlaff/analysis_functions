@@ -10,6 +10,8 @@ import sys
 
 import util
 
+archivedir='/data/loss/rpete/hz43'
+
 # Taken from https://stackoverflow.com/questions/2545532/python-analog-of-natsort-function-sort-a-list-using-a-natural-order-algorithm
 def natural_key(string_):
     """See http://www.codinghorror.com/blog/archives/001018.html"""
@@ -24,11 +26,22 @@ def rmf_directories():
 def arf_directories():
     return os.environ['ARFPATH'].split(':')
 
-def rmf_files(detector, grating, maxorder=None):
+
+def rmf_files(detector, grating, maxorder=None, archive=False):
+    if archive:
+        return archive_rmf_files(detector, grating, maxorder)
+
     files= generic_files(rmf_directories(), '{}-'.format(detector), '.rmf', grating, maxorder)
     return files
 
-def zeroth_arf_file(obsid):
+def zeroth_arf_file(obsid, archive=False):
+    if archive:
+        global archivedir
+        obsid = f'{int(obsid):05d}'
+        globstr = f'{archivedir}/[is]/{obsid}/analysis/tg/hrcf{obsid}_0th.arf'
+        #sys.stderr.write(globstr+"\n")
+        return glob.glob(globstr)[0]
+
     files = []
     for d in arf_directories():
         files.extend(glob.glob('{}/{}_0th.arf'.format(d, obsid)))
@@ -37,7 +50,38 @@ def zeroth_arf_file(obsid):
     thefile = files[0]
     return thefile
 
-def garf_files(obsid, grating, maxorder=None):
+def archive_rmf_files(detector, grating, maxorder):
+    files = { 'neg' : None, 'pos' : None }
+    prefixes = { 'neg' : 'm', 'pos' : 'p' }
+    detectors = { 'HRC-S' : 'hrcs', 'HRC-I' : 'hrci' }
+    grating = grating.lower()
+
+    for orders in files:
+        globstr = f'/data/loss/rpete/hrc/rmfs/{detectors[detector]}_{grating}_{prefixes[orders]}[1-9]*.rmf'
+        sys.stderr.write(globstr+"\n")
+        files[orders] = sorted(glob.glob(globstr), key=natural_key)[:maxorder]
+
+    return files
+
+def archive_garf_files(obsid, grating, maxorder):
+    files = { 'neg' : None, 'pos' : None }
+    prefixes = { 'neg' : 'm', 'pos' : 'p' }
+    grating = grating.lower()
+
+    global archivedir
+    obsid = f'{int(obsid):05d}'
+
+    for orders in files:
+        globstr = f'{archivedir}/[is]/{obsid}/analysis/tg/hrcf{obsid}_{grating}_{prefixes[orders]}[1-9]*.arf'
+        #sys.stderr.write(globstr+"\n")
+        files[orders] = sorted(glob.glob(globstr), key=natural_key)[:maxorder]
+
+    return files
+
+def garf_files(obsid, grating, maxorder=None, archive=False):
+    if archive:
+        return archive_garf_files(obsid, grating, maxorder)
+
     return generic_files(arf_directories(), '{}_'.format(obsid), '_garf.fits', grating, maxorder)
 
 def generic_files(directories, prefix, postfix, grating, maxorder):
@@ -97,9 +141,9 @@ def read_arf(filename):
 
     return e2w(energ_hi), e2w(energ_lo), specresp
 
-def get_rmfs(detector, grating, maxorder=None):
+def get_rmfs(detector, grating, maxorder=None, archive=False):
     if 'rmfs' not in get_rmfs.__dict__ or True:
-        files = rmf_files(detector, grating, maxorder)
+        files = rmf_files(detector, grating, maxorder, archive=archive)
         rmfs = {}
         bins_set = False
 
@@ -129,8 +173,8 @@ def get_rmfs(detector, grating, maxorder=None):
 
     return get_rmfs.bin_lo, get_rmfs.bin_hi, get_rmfs.rmfs
 
-def get_garfs(obsid, grating, maxorder=None):
-    files = garf_files(obsid, grating, maxorder)
+def get_garfs(obsid, grating, maxorder=None, archive=False):
+    files = garf_files(obsid, grating, maxorder, archive=archive)
     garfs = {}
     bins_set = False
     
@@ -161,12 +205,12 @@ def read_header(filename):
     hdulist.close()
     return header
 
-def get_response(obsid, arm, detnam=None, maxorder=None, tg_reprocess='tg_reprocess'):
+def get_response(obsid, arm, detnam=None, maxorder=None, tg_reprocess='tg_reprocess', archive=False):
     if detnam is None:
-        detnam = util.detnam(obsid, tg_reprocess=tg_reprocess)
+        detnam = util.detnam(obsid, tg_reprocess=tg_reprocess, archive=archive)
     if detnam[:4] == 'ACIS': detnam = 'ACIS-S'
-    bin_lo, bin_hi, rmfs = get_rmfs(detnam, arm, maxorder)
-    bin_lo, bin_hi, garfs = get_garfs(obsid, arm, maxorder)
+    bin_lo, bin_hi, rmfs = get_rmfs(detnam, arm, maxorder, archive=archive)
+    bin_lo, bin_hi, garfs = get_garfs(obsid, arm, maxorder, archive=archive)
     response = {}
     for order in rmfs:
         response[order] = rmfs[order] * garfs[order]
