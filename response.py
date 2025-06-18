@@ -10,8 +10,6 @@ import sys
 
 import util
 
-archivedir='/data/loss/rpete/hz43'
-
 # Taken from https://stackoverflow.com/questions/2545532/python-analog-of-natsort-function-sort-a-list-using-a-natural-order-algorithm
 def natural_key(string_):
     """See http://www.codinghorror.com/blog/archives/001018.html"""
@@ -36,9 +34,8 @@ def rmf_files(detector, grating, maxorder=None, archive=False):
 
 def zeroth_arf_file(obsid, archive=False):
     if archive:
-        global archivedir
         obsid = f'{int(obsid):05d}'
-        globstr = f'{archivedir}/[is]/{obsid}/analysis/tg/hrcf{obsid}_0th.arf'
+        globstr = f'{util.archivedir}/[is]/{obsid}/analysis/tg/hrcf{obsid}_0th.arf'
         #sys.stderr.write(globstr+"\n")
         return glob.glob(globstr)[0]
 
@@ -68,11 +65,10 @@ def archive_garf_files(obsid, grating, maxorder):
     prefixes = { 'neg' : 'm', 'pos' : 'p' }
     grating = grating.lower()
 
-    global archivedir
     obsid = f'{int(obsid):05d}'
 
     for orders in files:
-        globstr = f'{archivedir}/[is]/{obsid}/analysis/tg/hrcf{obsid}_{grating}_{prefixes[orders]}[1-9]*.arf'
+        globstr = f'{util.archivedir}/[is]/{obsid}/analysis/tg/hrcf{obsid}_{grating}_{prefixes[orders]}[1-9]*.arf'
         #sys.stderr.write(globstr+"\n")
         files[orders] = sorted(glob.glob(globstr), key=natural_key)[:maxorder]
 

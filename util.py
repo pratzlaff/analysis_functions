@@ -10,7 +10,7 @@ import flux
 import response
 
 basedir='/data/legs/rpete/flight/hz43'
-archivedir='/data/loss/rpete/hz43'
+archivedir='/data/loss/rpete/hrc'
 datadir=basedir+'/data'
 
 tg_parts = { 'HEG' : 1, 'MEG' : 2, 'LEG' : 3 }
@@ -54,7 +54,7 @@ def evt2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
 
     global datadir
     globstr = '{}/{}/{}/*_evt2.fits'.format(datadir, obsid, tg_reprocess)
-     #sys.stderr.write(globstr+"\n")
+    #sys.stderr.write(globstr+"\n")
     return glob.glob(globstr)[0]
 
 def pha2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
@@ -68,6 +68,7 @@ def pha2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
 
     global datadir
     globstr = '{}/{}/{}/*_pha2.fits'.format(datadir, obsid, tg_reprocess)
+    #sys.stderr.write(globstr+"\n")
     return glob.glob(globstr)[0]
 
 def read_pha2(filename):
