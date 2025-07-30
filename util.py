@@ -54,8 +54,11 @@ def evt2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
 
     global datadir
     globstr = '{}/{}/{}/*_evt2.fits'.format(datadir, obsid, tg_reprocess)
-    #sys.stderr.write(globstr+"\n")
-    return glob.glob(globstr)[0]
+    try:
+        return glob.glob(globstr)[0]
+    except:
+        raise RuntimeError(globstr)
+    
 
 def pha2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
 
@@ -63,13 +66,17 @@ def pha2_file(obsid, tg_reprocess='tg_reprocess', archive=False):
         global archivedir
         obsid = f'{int(obsid):05d}'
         globstr = f'{archivedir}/[is]/{obsid}/analysis/hrcf{obsid}_pha2.fits'
-        #sys.stderr.write(globstr+"\n")
-        return glob.glob(globstr)[0]
+        try:
+            return glob.glob(globstr)[0]
+        except:
+            raise RuntimeError(globstr)
 
     global datadir
     globstr = '{}/{}/{}/*_pha2.fits'.format(datadir, obsid, tg_reprocess)
-    #sys.stderr.write(globstr+"\n")
-    return glob.glob(globstr)[0]
+    try:
+        return glob.glob(globstr)[0]
+    except:
+        raise RuntimeError(globstr)
 
 def read_pha2(filename):
         hdulist = astropy.io.fits.open(filename)
