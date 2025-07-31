@@ -494,7 +494,7 @@ sub _process_hrc_directory {
   @required = ('bpix1') unless exists $opts{badpix};
 
   if (_dolevel(1) or _dolevel(1.5)) {
-    @required = qw( evt1 );
+    @required = qw( evt1 mtl1 );
   }
   elsif (_dolevel(2) and $grating != NONE) {
     @required = qw( evt1a );
@@ -521,19 +521,44 @@ sub _process_hrc_directory {
   $new->strip_gz;
   $new->newdir($opts{outdir});
 
-  my ($evt1, $evt1a, $evt2);
+  my ($evt1, $evt1_ssc, $evt1a, $evt2);
 
   my $bpix1;
+
+  my $flt1 = $old->std_flt1;
+  my $dtf1 = $old->dtf1;
 
   if (_dolevel(1)) {
 
     $evt1 = $old->evt1;
+
+    $evt1_ssc = $new->evt1;
+    $evt1_ssc =~ s/evt1\.fits/evt1_ssc.fits/;
+    unlink($new->std_flt1);
+    _run_command('punlearn', 'patch_hrc_ssc');
+    _run_command('patch_hrc_ssc', $dtf1, $old->mtl1, $evt1, $evt1_ssc, $new->std_flt1, $new->dtf1, 40000, 'cl+');
+    if (-e $new->std_flt1) {
+      my $flt1_clipped = $new->std_flt1;
+      $flt1_clipped =~ s/std_flt1\.fits/std_flt1_clipped.fits/;
+      _run_command('/proj/axaf/bin/perl',
+		   '/data/legs/rpete/flight/hrc_archive/src/clip_gti.pl',
+		   $flt1,
+		   $new->std_flt1,
+		   $flt1_clipped,
+		   );
+      $evt1 = $evt1_ssc;
+      $flt1 = $flt1_clipped;
+      $dtf1 = $new->dtf1;
+    }
 
     my $using_obspar;
 
     if ($opts{obspar} or $ciao_version =~ /^2\.3/) {
       $using_obspar = 1;
     }
+
+    # FIXME: have enabled obspar and build badpix, always
+    $opts{badpix} = 'CALDB' unless exists $opts{badpix};
 
     if ($using_obspar or exists $opts{badpix}) {
       $new->addtype('obs', 1, 'par');
@@ -828,7 +853,7 @@ sub _process_hrc_directory {
     $new->addtype('evt2', 2);
     _run_command('punlearn', 'dmcopy');
     _run_command('dmcopy',
-		 $evt1a.'[events][@'.$old->std_flt1.']' .
+		 $evt1a.'[events][@'.$flt1.']' .
 		 ( $opts{allcols} ? '' : '[cols !crsu,!crsv,!amp_sf,!av1,!av2,!av3,!au1,!au2,!au3,!raw,!sumamps]' ),
 		 $new->evt2,
 #		 'opt=all',
@@ -838,7 +863,7 @@ sub _process_hrc_directory {
     # recompute deadtime statistics
     # http://cxc.harvard.edu/ciao/threads/hrc_dtfstats/index.py.html
     $new->addtype('dtfstats');
-    dtcor($old->dtf1, $new->dtfstats, $old->std_flt1, $new->evt2);
+    dtcor($dtf1, $new->dtfstats, $flt1, $new->evt2);
 
     # as of ciao 4.4, time filtering with opt=all does not correctly
     # modify the GTI, so to work around, remove opt=all above and then
@@ -855,7 +880,7 @@ sub _process_hrc_directory {
       $new->addtype('dtf1_gti');
       _run_command(qw/ punlearn dmgti /);
       _run_command('dmgti',
-		   $old->dtf1,
+		   $dtf1,
 		   $new->dtf1_gti,
 		   'userlimit=dtf>'.$opts{dtffilter},
 		   'clobber=yes',
@@ -870,7 +895,7 @@ sub _process_hrc_directory {
 		  );
 
       $new->addtype('dtfstats_dtffilt');
-      dtcor($old->dtf1, $new->dtfstats_dtffilt, $old->std_flt1, $new->evt2_dtffilt);
+      dtcor($dtf1, $new->dtfstats_dtffilt, $flt1, $new->evt2_dtffilt);
 
       if ($grating != NONE) {
 	_run_command('punlearn', 'dmappend');
@@ -1026,7 +1051,7 @@ sub _process_hrc_directory {
 		       $old->pcadasol1,
 		       'grid('.$rmffile.'[cols ENERG_LO,ENERG_HI])',
 		       #		     'grid('._rmffile('LEG', 'hrc', 1).'[cols ENERG_LO,ENERG_HI])',
-		       $old->dtf1,
+		       $dtf1,
 		       $bpix1,
 		       $opts{outdir}.'/'.substr($new->lbase(2),0,-1),
 		       'maskfile=NONE',
