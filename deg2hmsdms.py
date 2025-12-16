@@ -4,10 +4,7 @@ from astropy.coordinates import SkyCoord
 
 def deg2hms(ra, dec):
     target = SkyCoord(ra=ra, dec=dec, unit=u.deg)
-    print(f'{int(target.ra.hms.h):02d}:{int(target.ra.hms.m):02d}:{target.ra.hms.s:0.4f}',
-          ' '
-          f'{int(target.dec.dms.d):02d}:{int(target.dec.dms.m):02d}:{target.dec.dms.s:07.4f}'
-          )
+    print(target.to_string('hmsdms', sep=':'))
 
 def main():
     parser = argparse.ArgumentParser(
