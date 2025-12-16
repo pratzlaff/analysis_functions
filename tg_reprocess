@@ -536,7 +536,7 @@ sub _process_hrc_directory {
     $evt1_ssc =~ s/evt1\.fits/evt1_ssc.fits/;
     unlink($new->std_flt1);
     _run_command('punlearn', 'patch_hrc_ssc');
-    _run_command('patch_hrc_ssc', $dtf1, $old->mtl1, $evt1, $evt1_ssc, $new->std_flt1, $new->dtf1, 40000, 'cl+');
+    _run_command('patch_hrc_ssc', $dtf1, $old->mtl1, $evt1, $evt1_ssc, $new->std_flt1, $new->dtf1, 4000, 'cl+');
     if (-e $new->std_flt1) {
       my $flt1_clipped = $new->std_flt1;
       $flt1_clipped =~ s/std_flt1\.fits/std_flt1_clipped.fits/;
