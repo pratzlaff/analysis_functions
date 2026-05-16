@@ -27,9 +27,9 @@ def arf_directories():
 
 def rmf_files(detector, grating, maxorder=None, archive=False):
     if archive:
-        return archive_rmf_files(detector, grating, maxorder)
-
-    files= generic_files(rmf_directories(), '{}-'.format(detector), '.rmf', grating, maxorder)
+        files = archive_rmf_files(detector, grating, maxorder)
+    else:
+        files= generic_files(rmf_directories(), '{}-'.format(detector), '.rmf', grating, maxorder)
     return files
 
 def zeroth_arf_file(obsid, archive=False):
@@ -54,8 +54,8 @@ def archive_rmf_files(detector, grating, maxorder):
     grating = grating.lower()
 
     for orders in files:
-        globstr = f'/data/loss/rpete/hrc/rmfs/{detectors[detector]}_{grating}_{prefixes[orders]}[1-9]*.rmf'
-        sys.stderr.write(globstr+"\n")
+        globstr = f'{util.archivedir}/../hrc/rmfs/{detectors[detector]}_{grating}_{prefixes[orders]}[1-9]*.rmf'
+        #sys.stderr.write(globstr+"\n")
         files[orders] = sorted(glob.glob(globstr), key=natural_key)[:maxorder]
 
     return files
