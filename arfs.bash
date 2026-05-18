@@ -30,7 +30,7 @@ generate_garfs() {
     local row=0
     dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | \grep -v '^#' | while read line
     do
-	(( row++ ))
+	(( row+=1 ))
 	read tg_m tg_part <<<$(echo "$line")
 
 	[ ! -z "$minorder" ] && [ ${tg_m#-} -lt $minorder ] && continue
