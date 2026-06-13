@@ -10,7 +10,7 @@ import flux
 import response
 
 basedir='/data/legs/rpete/flight/hz43'
-archivedir='/data/loss/rpete/hrc'
+archivedir='/data/hrc'
 datadir=basedir+'/data'
 
 tg_parts = { 'HEG' : 1, 'MEG' : 2, 'LEG' : 3 }
