@@ -188,8 +188,6 @@ $^W = 1;
 my $version = '0.1';
 
 use Config;
-use lib '/home/rpete/local/perlmods';
-use lib '/home/rpete/local/perlmods/'.$Config{archname};
 
 $| = 1;
 
@@ -200,32 +198,8 @@ $| = 1;
 # September, 1999
 #
 
-=begin comment
-
 BEGIN {
-    my $hostname = (split /\./, `hostname`)[0]; chomp $hostname;
-    if ($hostname ne 'legs') {
-	$ENV{LD_LIBRARY_PATH} = '/opt/X11R6/lib:/home/rpete/local/lib'.($ENV{LD_LIBRARY_PATH} ? ':'.$ENV{LD_LIBRARY_PATH} : '');
-	$ENV{PGPLOT_DIR} = '/home/rpete/local/pgplot';
-	$ENV{PGPLOT_FONT} = '/home/rpete/local/pgplot/grfont.dat';
-	$ENV{PGPLOT_DEV} = '/xs';
-    }
-};
-
-=cut
-
-# use Alien::PGPLOT;
-# use Env qw( @PATH );
-#
-# BEGIN {
-  # unshift @PATH, Alien::PGPLOT->bin_dir;
-  # print "@PATH";
-# };
-
-BEGIN {
-  our %ENV;
-  -d '/proj/web-cxc/cgi-gen/LETG/build/pgplot-5.22' and
-    $ENV{PGPLOT_DIR}='/proj/web-cxc/cgi-gen/LETG/build/pgplot-5.22';
+    $ENV{PATH} = "/home/rpete/build.RL_8.10/bin:$ENV{PATH}";
 };
 
 use PDL;
